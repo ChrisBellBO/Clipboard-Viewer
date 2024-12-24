@@ -12,31 +12,30 @@ using System;
 using System.Windows.Forms;
 using System.ComponentModel;
 using System.Collections;
-using System.Diagnostics;
 using System.Drawing;
 using Microsoft.Win32;
 using System.ComponentModel.Design;
 
 namespace ClipboardViewer
 {
-	/// <summary>
-	/// Component class that allows saving and restoring position and size of 
-	/// any System.Windows.Froms.Control, contained on a Form or UserControl.
-	/// It does not save/restore Form position in minimized state.
-	/// For ListView controls it can save/restore widths of colums.
-	/// This is based on code available at http://www.codeproject.com/cs/miscctrl/RealPosition.asp
-	/// </summary>
-	[Designer(typeof(RealPositionDesigner))]	
+  /// <summary>
+  /// Component class that allows saving and restoring position and size of 
+  /// any System.Windows.Froms.Control, contained on a Form or UserControl.
+  /// It does not save/restore Form position in minimized state.
+  /// For ListView controls it can save/restore widths of colums.
+  /// This is based on code available at http://www.codeproject.com/cs/miscctrl/RealPosition.asp
+  /// </summary>
+  [Designer(typeof(RealPositionDesigner))]	
 	[ToolboxItem(true)]
 	[ToolboxBitmap(typeof(RealPosition))]
 	[ProvideProperty("RestoreLocation", typeof(Control))]
 	[ProvideProperty("RestoreColumnsWidth", typeof(ListView))]
 	public sealed class RealPosition : Component, IExtenderProvider
 	{
-		private System.ComponentModel.Container components = null;
+		private Container components = null;
 		private string m_RegPath;
 		private string m_subRegPath;
-		private Hashtable m_properties;
+		private readonly Hashtable m_properties;
 		private Control m_parent = null;
 		private Form m_parentForm = null;
 
@@ -131,19 +130,18 @@ namespace ClipboardViewer
 				m_parent = value;
 
 				// attach handlers
-				if(!this.DesignMode)
+				if (!DesignMode)
 				{
-					if(m_parent is Form) 
+					if (m_parent is Form form) 
 					{
-						m_parentForm = (Form)m_parent;
+						m_parentForm = form;
 						m_parentForm.Load += new EventHandler(OnLoad);
 					}
-					else if(m_parent is UserControl)
-					{
-						UserControl u = (UserControl)m_parent;
-						u.Load += new EventHandler(OnLoad);
-					}
-				}
+					else if (m_parent is UserControl u)
+          {
+            u.Load += new EventHandler(OnLoad);
+          }
+        }
 			}
 		}
 		#endregion
@@ -174,6 +172,7 @@ namespace ClipboardViewer
 			else 
 				return false;
 		}
+
 		private void ResetRestoreLocation(Control c)
 		{
 			// by default Restore the location of the main Form 
@@ -198,6 +197,7 @@ namespace ClipboardViewer
 		{
 			this[c].RestoreColumnsWidth = val;
 		}
+
 		private bool ShouldSerializeRestoreColumnsWidth(Control c)
 		{
 			return this[c].RestoreColumnsWidth;
@@ -209,23 +209,22 @@ namespace ClipboardViewer
 
 		private void OnClosed(object sender, EventArgs e)
 		{
-			foreach(DictionaryEntry property in m_properties)
+			foreach (DictionaryEntry property in m_properties)
 			{
 				Properties p = (Properties)property.Value;
 				string regpath = m_RegPath + m_subRegPath + p.m_subRegPath;
 				RegistryKey key = Registry.CurrentUser.CreateSubKey(regpath);
 				if(p.RestoreLocation == true) // Save only if RestoreLocation is True
 				{
-					if(p.m_parent is Form)
+					if (p.m_parent is Form form)
 					{
-						FormWindowState windowState = ((Form)p.m_parent).WindowState;
+						FormWindowState windowState = form.WindowState;
 						key.SetValue("WindowState", (int)windowState);
 					}
 					SaveControlLocation(key,p);
 				}
-				ListView lv = p.m_parent as ListView;
-				string regpath_headers = regpath + @"\ColumnHeaders";
-				if(p.RestoreColumnsWidth == true && lv != null)
+        string regpath_headers = regpath + @"\ColumnHeaders";
+        if (p.RestoreColumnsWidth == true && p.m_parent is ListView lv)
 				{
 					// save ColumnHeaders
 					RegistryKey key_headers = Registry.CurrentUser.CreateSubKey(regpath_headers);
@@ -306,16 +305,15 @@ namespace ClipboardViewer
 		/// <param name="p">Instance of Properties class which a valid reference to ListView being restored</param>
 		private void LoadListViewColumns(RegistryKey key, Properties p)
 		{
-			ListView lv = p.m_parent as ListView;
-			if(lv != null && key != null)
-			{
-				foreach(ColumnHeader ch in lv.Columns)
-				{
-					object width = key.GetValue(lv.Columns.IndexOf(ch).ToString());
-					if(width != null) ch.Width = (int)width;
-				}
-			}
-		}
+      if (p.m_parent is ListView lv && key != null)
+      {
+        foreach (ColumnHeader ch in lv.Columns)
+        {
+          object width = key.GetValue(lv.Columns.IndexOf(ch).ToString());
+          if (width != null) ch.Width = (int)width;
+        }
+      }
+    }
 
 		/// <summary>
 		/// Loads size/position from the registry and sets Control.Location and Control.Size
@@ -347,21 +345,20 @@ namespace ClipboardViewer
 			}
 
 			// restore size
-			if(width != null && height != null) 
+			if (width != null && height != null) 
 			{
 				p.m_parent.Size = new Size((int)width,(int)height);
 			}
 
-			// restore window state for the Form
-			Form f = p.m_parent as Form;
-			if(f != null && windowState != null)
-			{
-				f.WindowState = (FormWindowState)windowState;
-				// do not allow minimized restore
-				if(f.WindowState == FormWindowState.Minimized)
-					f.WindowState = FormWindowState.Normal;
-			}
-		}
+      // restore window state for the Form
+      if (p.m_parent is Form f && windowState != null)
+      {
+        f.WindowState = (FormWindowState)windowState;
+        // do not allow minimized restore
+        if (f.WindowState == FormWindowState.Minimized)
+          f.WindowState = FormWindowState.Normal;
+      }
+    }
 		#endregion
 
 		bool IExtenderProvider.CanExtend(object extendee)
@@ -403,7 +400,7 @@ namespace ClipboardViewer
 				m_parent = (Control)o;		// type cast should not result to null
 				m_isForm = (o is Form);
 				// if o is Form then m_subRegPath is empty string
-				m_subRegPath = (o is Form) ? String.Empty : m_parent.Name;
+				m_subRegPath = (o is Form) ? string.Empty : m_parent.Name;
 				
 				// attach to Resize and Move
 				m_parent.Resize += new System.EventHandler(OnResize);

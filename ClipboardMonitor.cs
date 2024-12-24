@@ -15,10 +15,10 @@ namespace ClipboardViewer
 
     public ClipboardMonitor()
     {
-      this.BackColor = Color.Red;
-      this.Visible = false;
+      BackColor = Color.Red;
+      Visible = false;
 
-      nextClipboardViewer = (IntPtr)SetClipboardViewer((int)this.Handle);
+      nextClipboardViewer = (IntPtr)SetClipboardViewer((int)Handle);
     }
 
     /// <summary> 
@@ -71,10 +71,7 @@ namespace ClipboardViewer
       try
       {
         IDataObject iData = Clipboard.GetDataObject();
-        if (ClipboardChanged != null)
-        {
-          ClipboardChanged(this, new ClipboardChangedEventArgs(iData));
-        }
+        ClipboardChanged?.Invoke(this, new ClipboardChangedEventArgs(iData));
 
       }
       catch (Exception e)

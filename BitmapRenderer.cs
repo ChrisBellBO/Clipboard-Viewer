@@ -19,12 +19,14 @@ namespace ClipboardViewer
 
     public override void LoadData(object data, string dataFormat)
     {
-      if (data is Bitmap)
-        pictureBox.Image = data as Bitmap;
-      else if ((data is MemoryStream) && ((dataFormat == "DeviceIndependentBitmap") || (dataFormat == "Format17")))
-      {
-        Bitmap bmp = BitmapFromDIB(data as MemoryStream);
+      if (data is Bitmap bmp)
         pictureBox.Image = bmp;
+      else if (data is MemoryStream ms)
+      {
+        if (dataFormat == "DeviceIndependentBitmap")
+          pictureBox.Image = BitmapFromDIB(ms);
+        else
+          pictureBox.Image = Image.FromStream(ms);
       }
     }
 
@@ -90,7 +92,7 @@ namespace ClipboardViewer
       if (dibHdr.biBitCount == 8)
       {
         // set our pointer to end of BITMAPINFOHEADER
-        Int64 jumpTo = hdl.AddrOfPinnedObject().ToInt64() + dibHdr.biSize;
+        var jumpTo = hdl.AddrOfPinnedObject().ToInt64() + dibHdr.biSize;
         bmp = new Bitmap(dibHdr.biWidth, dibHdr.biHeight, PixelFormat.Format8bppIndexed);
         bmp.SetResolution((100f * (float)dibHdr.biXPelsPerMeter) / 2.54f,
                  (100f * (float)dibHdr.biYPelsPerMeter) / 2.54f);
@@ -122,9 +124,9 @@ namespace ClipboardViewer
         Int64 jumpTo = (Int64)(dibHdr.biClrUsed * (uint)4 + dibHdr.biSize);
         IntPtr ptr = new IntPtr(hdl.AddrOfPinnedObject().ToInt64() + jumpTo);
         ushort redMask = (ushort)Marshal.ReadInt16(ptr);
-        ptr = new IntPtr(ptr.ToInt64() + (2 * Marshal.SizeOf(typeof(UInt16))));
+        ptr = new IntPtr(ptr.ToInt64() + (2 * Marshal.SizeOf(typeof(ushort))));
         ushort greenMask = (ushort)Marshal.ReadInt16(ptr);
-        ptr = new IntPtr(ptr.ToInt64() + (2 * Marshal.SizeOf(typeof(UInt16))));
+        ptr = new IntPtr(ptr.ToInt64() + (2 * Marshal.SizeOf(typeof(ushort))));
         ushort blueMask = (ushort)Marshal.ReadInt16(ptr);
 
         is555 = ((redMask == 0x7C00) && (greenMask == 0x03E0) && (blueMask == 0x001F));

@@ -16,17 +16,22 @@ namespace ClipboardViewer
 
     public override void LoadData(object data, string dataFormat)
     {
-      if (data is string)
+      if (data is string str)
       {
-        dataBox.Text = data.ToString();
+        dataBox.Text = str;
       }
-      else if (data is string[])
+      else if (data is string[] strArray)
       {
-        dataBox.Lines = data as string[];
+        dataBox.Lines = strArray;
       }
-      else if (data is Stream)
+      else if (data is Stream stream)
       {
-        StreamReader reader = new StreamReader(data as Stream);
+        StreamReader reader;
+        if (dataFormat == "UniformResourceLocatorW")
+          reader = new StreamReader(stream, Encoding.Unicode);
+        else
+          reader = new StreamReader(stream);
+
         dataBox.Text = reader.ReadToEnd();
       }
       else

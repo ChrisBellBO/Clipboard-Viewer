@@ -1,31 +1,30 @@
 using System;
 using System.Drawing;
-using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
 using System.IO;
-using System.Text;
 
 namespace ClipboardViewer
 {
-	/// <summary>
-	/// Summary description for Form1.
-	/// </summary>
-	public class MainForm : System.Windows.Forms.Form
+  /// <summary>
+  /// Summary description for Form1.
+  /// </summary>
+  public class MainForm : Form
 	{
-    private System.Windows.Forms.Panel panel1;
-    private System.Windows.Forms.Label label1;
-    private System.Windows.Forms.ListBox formatsList;
-    private System.Windows.Forms.MainMenu mainMenu1;
-    private System.Windows.Forms.MenuItem menuItem1;
-    private System.Windows.Forms.MenuItem menuItem2;
-    private System.Windows.Forms.MenuItem menuItem3;
-    private System.Windows.Forms.MenuItem menuItem4;
-    private System.Windows.Forms.MenuItem menuItem5;
-    private System.Windows.Forms.Label dataLabel;
+    private Panel panel1;
+    private Label label1;
+    private ListBox formatsList;
+    private MainMenu mainMenu1;
+    private MenuItem menuItem1;
+    private MenuItem menuItem2;
+    private MenuItem menuItem3;
+    private MenuItem menuItem4;
+    private MenuItem menuItem5;
+    private Label dataLabel;
     private Panel rendererPanel;
     private ClipboardMonitor clipboardMonitor;
     private MenuItem saveMenuItem;
+    private RealPosition realPosition1;
     private IContainer components;
 
 		public MainForm()
@@ -39,16 +38,13 @@ namespace ClipboardViewer
 		/// <summary>
 		/// Clean up any resources being used.
 		/// </summary>
-		protected override void Dispose( bool disposing )
+		protected override void Dispose(bool disposing)
 		{
-			if( disposing )
+			if (disposing)
 			{
-				if (components != null) 
-				{
-					components.Dispose();
-				}
+				components?.Dispose();
 			}
-			base.Dispose( disposing );
+			base.Dispose(disposing);
 		}
 
 		#region Windows Form Designer generated code
@@ -61,6 +57,7 @@ namespace ClipboardViewer
       this.components = new System.ComponentModel.Container();
       System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
       this.panel1 = new System.Windows.Forms.Panel();
+      this.clipboardMonitor = new ClipboardViewer.ClipboardMonitor();
       this.dataLabel = new System.Windows.Forms.Label();
       this.label1 = new System.Windows.Forms.Label();
       this.formatsList = new System.Windows.Forms.ListBox();
@@ -72,7 +69,7 @@ namespace ClipboardViewer
       this.menuItem4 = new System.Windows.Forms.MenuItem();
       this.menuItem5 = new System.Windows.Forms.MenuItem();
       this.rendererPanel = new System.Windows.Forms.Panel();
-      this.clipboardMonitor = new ClipboardViewer.ClipboardMonitor();
+      this.realPosition1 = new ClipboardViewer.RealPosition(this.components);
       this.panel1.SuspendLayout();
       this.SuspendLayout();
       // 
@@ -86,6 +83,17 @@ namespace ClipboardViewer
       this.panel1.Name = "panel1";
       this.panel1.Size = new System.Drawing.Size(561, 32);
       this.panel1.TabIndex = 0;
+      // 
+      // clipboardMonitor
+      // 
+      this.clipboardMonitor.BackColor = System.Drawing.Color.Red;
+      this.clipboardMonitor.Location = new System.Drawing.Point(450, 3);
+      this.clipboardMonitor.Name = "clipboardMonitor";
+      this.clipboardMonitor.Size = new System.Drawing.Size(75, 23);
+      this.clipboardMonitor.TabIndex = 0;
+      this.clipboardMonitor.Text = "clipboardMonitor1";
+      this.clipboardMonitor.Visible = false;
+      this.clipboardMonitor.ClipboardChanged += new System.EventHandler<ClipboardViewer.ClipboardChangedEventArgs>(this.clipboardMonitor_ClipboardChanged);
       // 
       // dataLabel
       // 
@@ -166,16 +174,9 @@ namespace ClipboardViewer
       this.rendererPanel.Size = new System.Drawing.Size(409, 251);
       this.rendererPanel.TabIndex = 2;
       // 
-      // clipboardMonitor
+      // realPosition1
       // 
-      this.clipboardMonitor.BackColor = System.Drawing.Color.Red;
-      this.clipboardMonitor.Location = new System.Drawing.Point(450, 3);
-      this.clipboardMonitor.Name = "clipboardMonitor";
-      this.clipboardMonitor.Size = new System.Drawing.Size(75, 23);
-      this.clipboardMonitor.TabIndex = 0;
-      this.clipboardMonitor.Text = "clipboardMonitor1";
-      this.clipboardMonitor.Visible = false;
-      this.clipboardMonitor.ClipboardChanged += new System.EventHandler<ClipboardViewer.ClipboardChangedEventArgs>(this.clipboardMonitor_ClipboardChanged);
+      this.realPosition1.Parent = this;
       // 
       // MainForm
       // 
@@ -187,6 +188,7 @@ namespace ClipboardViewer
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.Menu = this.mainMenu1;
       this.Name = "MainForm";
+      this.realPosition1.SetRestoreLocation(this, true);
       this.Text = "Clipboard viewer";
       this.Load += new System.EventHandler(this.Form1_Load);
       this.panel1.ResumeLayout(false);
@@ -205,7 +207,7 @@ namespace ClipboardViewer
 			Application.Run(new MainForm());
 		}
 
-    private void button1_Click(object sender, System.EventArgs e)
+    private void button1_Click(object sender, EventArgs e)
     {
       RefreshClipboardView();
     }
@@ -233,6 +235,7 @@ namespace ClipboardViewer
         case "FileName":
         case "FileNameW":
         case "Csv":
+        case "UniformResourceLocatorW":
           return new TextRenderer();
         
         case "HTML Format": 
@@ -244,12 +247,15 @@ namespace ClipboardViewer
         case "System.Drawing.Bitmap":
         case "Bitmap": 
         case "DeviceIndependentBitmap":
-        case "Format17":
+        case "PNG":
           return new BitmapRenderer();
       }
 
       if (data is MemoryStream)
         return new MemoryStreamRenderer();
+
+      if (data is string)
+        return new TextRenderer();
 
       return null;
     }
